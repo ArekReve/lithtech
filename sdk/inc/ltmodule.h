@@ -148,29 +148,29 @@ in the macro without any enclosing quotation marks.
 Interface implementations are retrieved from the interface manager with the
 \b define_holder and the \b define_holder_to_instance macros.
 */
-#define instantiate_interface(impl_class, interface_class, instance_name)           \
-    /* Declare a global instance of our implementation class. */                    \
-    /* It is not static so that we will get link errors if two instances */         \
-    /* are created with the same instance name. */                                  \
-    static impl_class __impl_instance_##impl_class##_##instance_name##__;           \
-    /* Declare a pointer to the instance, so that we can reference it and */        \
-    /* get proper linkage if the instance is defined in a lib. */                   \
-    impl_class *__impl_ptr_##impl_class##_##instance_name##__ =                     \
-        &__impl_instance_##impl_class##_##instance_name##__;                        \
-    /* Delcare a global instance of our CAPIInterfaceDefines class, to register */  \
-    /* our implementation class for the given interaface class name. */             \
-    static CAPIInstanceDefines<impl_class>                                          \
-        __impl_##impl_class##_defines_##interface_class##_##instance_name##__(      \
-            &__impl_instance_##impl_class##_##instance_name##__,                    \
-            #interface_class "." #instance_name,                                    \
-            interface_class::_##interface_class##_VERSION_);                        \
-    /* Make a static search structure we can use to find this interface */          \
-    /* definition in a compiled object file.                            */          \
-    static SStaticSearchInterface                                                   \
-        __var_search_##interface_class##_##impl_class##_##instance_name##_ = {      \
-            SEARCH_MARKER_INTERFACE, SEARCH_MARKER_INT, #interface_class,           \
-            #impl_class, #instance_name,                                            \
-            interface_class::_##interface_class##_VERSION_};                        \
+#define instantiate_interface(impl_class, interface_class, instance_name)                    \
+    /* Declare a global instance of our implementation class. */                             \
+    /* It is not static so that we will get link errors if two instances */                  \
+    /* are created with the same instance name. */                                           \
+    static impl_class global_static_impl_instance_##impl_class##_##instance_name##_;         \
+    /* Declare a pointer to the instance, so that we can reference it and */                 \
+    /* get proper linkage if the instance is defined in a lib. */                            \
+    impl_class *global_impl_ptr_##impl_class##_##instance_name##_ =                           \
+        &global_static_impl_instance_##impl_class##_##instance_name##_;                      \
+    /* Delcare a global instance of our CAPIInterfaceDefines class, to register */           \
+    /* our implementation class for the given interaface class name. */                      \
+    static CAPIInstanceDefines<impl_class>                                                   \
+        global_static_impl_##impl_class##_defines_##interface_class##_##instance_name##_ {    \
+            global_impl_ptr_##impl_class##_##instance_name##_,                                \
+            #interface_class "." #instance_name,                                             \
+            interface_class::_##interface_class##_VERSION_ };                                \
+    /* Make a static search structure we can use to find this interface */                   \
+    /* definition in a compiled object file.                            */                   \
+    static SStaticSearchInterface                                                            \
+        global_static_var_search_##interface_class##_##impl_class##_##instance_name##_ = {   \
+            SEARCH_MARKER_INTERFACE, SEARCH_MARKER_INT, #interface_class,                    \
+            #impl_class, #instance_name,                                                     \
+            interface_class::_##interface_class##_VERSION_};                                 \
 
 /*!
 \param impl_class_name The class name of the implementation (not interface) class.
@@ -201,10 +201,10 @@ implementation class itself be included.
     /* Forward declare the implementation class name. */                            \
     class impl_class_name;                                                          \
     /* declare an extern to the implementation instance pointer */                  \
-    extern impl_class_name *__impl_ptr_##impl_class_name##_##instance_name##__;     \
+    extern impl_class_name *global_impl_ptr_##impl_class_name##_##instance_name##_;     \
     /* Reference the pointer to the instance defined in the lib. */                 \
-    impl_class_name *__for_linker_ptr_##impl_class_name##_##instance_name##__ =     \
-        __impl_ptr_##impl_class_name##_##instance_name##__;                         \
+    impl_class_name *global_for_linker_ptr_##impl_class_name##_##instance_name##_ =     \
+        global_impl_ptr_##impl_class_name##_##instance_name##_;                         \
 
 /*!
 \param impl_class The name of the class that is to be instantiated.
@@ -235,10 +235,10 @@ class/instance name combination.
     /* Delcare a global instance of our CAPIInterfaceDefines class, to register */  \
     /* our implementation class for the given interaface class name. */             \
     static CAPIInstanceDefines<impl_class>                                          \
-        __impl_##impl_class##_defines_##interface_class##_##instance_name##__(      \
-            &__impl_instance_##impl_class##_##other_instance_name##__,              \
+        global_static_impl_##impl_class##_defines_##interface_class##_##instance_name##_ {      \
+            &global_static_impl_instance_##impl_class##_##other_instance_name##_,              \
             #interface_class "." #instance_name,                                    \
-            interface_class::_##interface_class##_VERSION_);                        \
+            interface_class::_##interface_class##_VERSION_};                        \
 
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -321,15 +321,15 @@ If the instance name is \b Default, the more simple \b define_holder macro may b
     /* Make a static search struct for this holder so that we can search */         \
     /* for this holder definition in a compiled object file.             */         \
     static SStaticSearchHolder                                                      \
-        __var_search_holder_##interface_name##_##instance_name##_= {                \
+        global_static_var_search_holder_##interface_name##_##instance_name##_ = {   \
             SEARCH_MARKER_HOLDER, SEARCH_MARKER_INT,                                \
             #interface_name, #instance_name,                                        \
             interface_name::_##interface_name##_VERSION_};                          \
     /* Define the holder variable itself. */                                        \
     static CAPIHolder<interface_name>                                               \
-        __api_holder_##interface_name##_##instance_name##__(                        \
+        global_static_api_holder_##interface_name##_##instance_name##_ {            \
             #interface_name "." #instance_name,                                     \
-            ptr_var, interface_name::_##interface_name##_VERSION_);                 \
+            ptr_var, interface_name::_##interface_name##_VERSION_ };                \
 
 /*!
 \param interface_name The name of the interface that you want a pointer to.
@@ -931,14 +931,14 @@ uint32 CAPIHolderBase::Version() {
 
     #define define_chooser_list(interface_name, var, imp_names, default_imp)                \
         /* make a function that will get called to initialize our chooser. */               \
-        void __chooser_list_init_hook_##var##_() {                                          \
+        void lt_internal_chooser_list_init_hook_##var##_() {                                          \
             /* initialize the object */                                                     \
             var->Init(#interface_name, interface_name::_##interface_name##_VERSION_,        \
                 sizeof(imp_names)/sizeof(imp_names[0]), imp_names, default_imp);            \
         }                                                                                   \
         /* make the CChooserRegister variable */                                            \
-        static CChooserRegister __chooser_register_##var##_(var,                            \
-            __chooser_list_init_hook_##var##_);                                             \
+        static CChooserRegister global_static_chooser_register_##var##_(var,                \
+            lt_internal_chooser_list_init_hook_##var##_);                                             \
 
 
     //
